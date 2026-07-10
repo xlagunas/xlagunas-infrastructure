@@ -1,54 +1,43 @@
-# ⚠️ AQUEST FITXER NO VA EN AQUEST REPO (infra).
-# És una PLANTILLA per a CADA repo d'aplicació (p.ex. andrtc_backend).
-# Copia'l a  .github/workflows/deploy.yml  del repo de l'app.
+name: Deploy infra (Caddy)
 
-name: Build & Deploy
+# La infra NO genera imatge (Caddy ve prefabricat). Aquest workflow només
+# envia la config al VPS i fa "docker compose up -d" + reload de Caddy.
 
 on:
   push:
     branches: [main]
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+concurrency:
+  group: deploy-infra
+  cancel-in-progress: true
 
 jobs:
-  build-and-push:
+  deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     steps:
       - uses: actions/checkout@v4
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build & push
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
-  deploy:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Redeploy al VPS
+      # 1. Copia els fitxers de config al VPS (mantenint reverse-proxy/)
+      - name: Copy infra files to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "docker-compose.yml,reverse-proxy/Caddyfile"
+          target: /opt/xlagunas-infra
+
+      # 2. Arrenca/actualitza Caddy i recarrega la config en calent
+      - name: Up & reload
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-
           script: |
             cd /opt/xlagunas-infra
-            
             docker compose pull
             docker compose up -d
-            docker image prune -f
+            # reload en calent: aplica canvis del Caddyfile sense recrear el
+            # contenidor (up -d sol no els agafa perquè el fitxer va muntat)
+            docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile || true
