@@ -20,15 +20,15 @@ Internet ─▶ Caddy (:80/:443, HTTPS auto) ─▶ [xarxa "web"] ─▶ backend
   (perquè Caddy hi arribi); la DB queda a una xarxa `internal` privada, invisible
   per al proxy i per a la resta d'apps.
 
-Veure `examples/andrtc_backend.docker-compose.yml` com a plantilla d'app.
+Cada app porta el seu propi `docker-compose.yml` al seu repo (s'enganxa a `web`).
 
 ## Ordre d'arrencada al VPS (IMPORTANT)
 
 La infra crea la xarxa `web`, així que va **primer**:
 
 ```bash
-cd ~/xlagunas-infra && ./deploy.sh          # Caddy + xarxa "web"
-cd ~/andrtc_backend && docker compose up -d # l'app s'hi enganxa
+cd /opt/xlagunas-infra && docker compose up -d # Caddy + xarxa "web"
+cd /opt/andrtc_backend && docker compose up -d # l'app s'hi enganxa
 ```
 
 Si una app arrenca abans i la xarxa `web` no existeix, Docker es queixarà.
@@ -39,7 +39,8 @@ Si una app arrenca abans i la xarxa `web` no existeix, Docker es queixarà.
 |------------------------|----------------------|
 | `api.viv.xlagunas.net` | `andrtc-backend:8080`|
 
-Afegir una app = un bloc nou al `Caddyfile` + `./deploy.sh reload`.
+Afegir una app = un bloc nou al `Caddyfile` + recàrrega en calent:
+`docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile`.
 
 ## DNS ⚠️ (subdomini de dos nivells)
 
@@ -63,7 +64,7 @@ en fer push a `main`:
 
 1. build de la imatge,
 2. push a `ghcr.io/xlagunas/<app>:latest` (+ `:sha`),
-3. SSH al VPS → `cd ~/<app> && git pull && docker compose pull && up -d`.
+3. SSH al VPS → `cd /opt/<app> && docker compose pull && up -d`.
 
 ### Secrets a cada repo d'app
 
@@ -75,7 +76,7 @@ en fer push a `main`:
 
 ## Un cop al VPS
 
-1. Clona aquest repo a `~/xlagunas-infra` i cada app al seu `~/<app>`.
+1. Situa aquest repo a `/opt/xlagunas-infra` i cada app al seu `/opt/<app>`.
 2. GHCR: si les imatges són privades, `docker login ghcr.io` amb un PAT
    `read:packages`; si són públiques, res.
-3. `cd ~/xlagunas-infra && ./deploy.sh`, després aixeca cada app
+3. `cd /opt/xlagunas-infra && docker compose up -d`, després aixeca cada app
