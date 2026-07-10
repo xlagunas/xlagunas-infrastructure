@@ -1,0 +1,10 @@
+# Config i secrets reals — mai al repo
+.env
+apps/*.env
+
+# Dades persistents (si algun dia uses bind-mounts en comptes de volums)
+data/
+
+# IDE
+.idea/
+.vscode/

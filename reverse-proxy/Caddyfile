@@ -1,0 +1,23 @@
+# Opcions globals
+{
+
+	# Email per als certificats Let's Encrypt (avisos de caducitat)
+	email me@xlagunas.net
+}
+
+# --- Aplicacions ---
+# Cada bloc = un subdomini. Caddy demana i renova el certificat sol.
+# El target (p.ex. "andrtc-backend") ha de coincidir amb el container_name
+# (o service name) que l'app enganxa a la xarxa "web".
+# El port és el port INTERN on escolta l'app dins el seu contenidor.
+
+#api.viv.xlagunas.net {
+#	reverse_proxy viv-backend:8080
+#}
+api.viv.{$DOMAIN:localhost} {
+	reverse_proxy viv-backend:8080
+}
+
+wss.viv.{$DOMAIN:localhost} {
+	reverse_proxy viv-node:3000
+}
