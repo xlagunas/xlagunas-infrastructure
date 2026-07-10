@@ -78,4 +78,4 @@ en fer push a `main`:
 1. Clona aquest repo a `~/xlagunas-infra` i cada app al seu `~/<app>`.
 2. GHCR: si les imatges són privades, `docker login ghcr.io` amb un PAT
    `read:packages`; si són públiques, res.
-3. `cd ~/xlagunas-infra && ./deploy.sh`, després aixeca cada app.
+3. `cd ~/xlagunas-infra && ./deploy.sh`, després aixeca cada app
