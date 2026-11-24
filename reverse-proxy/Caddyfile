@@ -1,6 +1,5 @@
 # Opcions globals
 {
-
 	# Email per als certificats Let's Encrypt (avisos de caducitat)
 	email me@xlagunas.net
 }
@@ -20,4 +19,28 @@ api.viv.{$DOMAIN:localhost} {
 
 wss.viv.{$DOMAIN:localhost} {
 	reverse_proxy viv-node:3000
+}
+
+# Web pública de Viv. De moment només serveix el Digital Asset Links perquè
+# Android obri els deeplinks (https://viv.xlagunas.dev/conference?roomId=...)
+# directament a l'app. Falta l'entrada de producció (cat.xlagunas.viv):
+# https://github.com/xlagunas/AndRTC/issues/114
+viv.{$DOMAIN:localhost} {
+	handle /.well-known/assetlinks.json {
+		header Content-Type application/json
+		respond `[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "cat.xlagunas.viv.dev",
+      "sha256_cert_fingerprints": ["37:12:61:1C:CB:A0:05:24:28:A6:61:88:AD:D8:71:8D:A1:0C:31:7E:A4:E0:D9:0A:5A:89:DB:09:88:67:00:F8"]
+    }
+  }
+]` 200
+	}
+
+	handle {
+		respond "Viv" 200
+	}
 }
